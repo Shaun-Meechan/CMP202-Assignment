@@ -1,0 +1,7 @@
+﻿  Main.cpp
+C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\Main.cpp(125,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\Main.cpp(218,20): warning C4018: '<': signed/unsigned mismatch
+  QueueFillerTask.cpp
+  TruckTask.cpp
+  Generating Code...
+  CMP202-Assignment.vcxproj -> C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\Debug\CMP202-Assignment.exe
