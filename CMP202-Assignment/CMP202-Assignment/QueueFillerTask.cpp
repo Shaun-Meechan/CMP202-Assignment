@@ -12,26 +12,22 @@ std::queue<Task*> QueueFillerTask::run(std::queue<Task*> tasksQueue)
 	if (r2 == 0)
 	{
 		std::cout << "We are adding a inbound truck!" << std::endl;
-		//for (int i = 0; i < randomNumber; i++)
-		//{
-		//	tasksQueue.push(new TruckTask(true));
-		//}
-		parallel_for(0, randomNumber, [&](int value)
+		for (int i = 0; i < randomNumber; i++)
 		{
 			tasksQueue.push(new TruckTask(true));
-		});
+		}
 	}
 	else
 	{
 		std::cout << "We are adding a outbound truck!" << std::endl;
-		//for (int i = 0; i < randomNumber; i++)
-		//{
-		//	tasksQueue.push(new TruckTask(false));
-		//}
-		parallel_for(0, randomNumber, [&](int value)
+		for (int i = 0; i < randomNumber; i++)
 		{
 			tasksQueue.push(new TruckTask(false));
-		});
+		}
+		//parallel_for(0, randomNumber, [&](int value)
+		//{
+		//	tasksQueue.push(new TruckTask(false));
+		//});
 	}
 
 	//Reset our ints.

@@ -36,10 +36,11 @@ void workerThreadFunction()
 {
 	cout << "Started a worker thread!" << endl;
 	Task* currentTask = NULL;
+	bool noMoreTasks = false;
 	while (finish == false)
 	{
 		//Get a task if we don't have one
-		while (currentTask == NULL)
+		while (currentTask == NULL && noMoreTasks == false)
 		{
 			queueMutex.lock();
 			if (tasksQueue.empty() == false)
@@ -49,28 +50,44 @@ void workerThreadFunction()
 			}
 			else
 			{
-				currentTask = NULL;
+				noMoreTasks = true;
 			}
 			queueMutex.unlock();
 		}
+
+		if (noMoreTasks == true)
+		{
+			cout << "worker ran out of tasks. Finishing" << endl;
+			break;
+		}
+
 		//Get the type of truck
 		if (currentTask->getType() == truckType::inbound)
 		{
 			cout << "We are dealing with a inbound truck!" << endl;
-			while (currentTask->getCount() > 0)
+			//while (currentTask->getCount() > 0)
+			//{
+			//	currentTask->run();
+			//	std::this_thread::sleep_for(std::chrono::seconds(1));
+			//}
+			parallel_for(0, 50, [&](int value)
 			{
 				currentTask->run();
-				std::this_thread::sleep_for(std::chrono::seconds(1));
-			}
+			});
 		}
 		else
 		{
 			cout << "We are dealing with a outbound truck!" << endl;
-			while (currentTask->getCount() < 50)
+			//while (currentTask->getCount() < 50)
+			//{
+			//	currentTask->run();
+			//	std::this_thread::sleep_for(std::chrono::seconds(1));
+			//}
+			parallel_for(0, 50, [&](int value)
 			{
 				currentTask->run();
-				std::this_thread::sleep_for(std::chrono::seconds(1));
-			}
+			});
+
 		}
 		cout << "Finished task!" << endl;
 		currentTask = NULL;
@@ -92,7 +109,6 @@ void QueueFillerThreadFunction()
 		lock.unlock();
 
 		std::cout << "Added to queue successfully. Restarting all worker threads..." << endl;
-
 		//Restart all 4 worker threads
 		for (int i = 0; i < 4; i++)
 		{
@@ -110,7 +126,7 @@ void threadManager()
 	while (finish != true)
 	{
 		//Don't do anything for the first 20 seconds.
-		std::this_thread::sleep_for(std::chrono::seconds(20));
+		std::this_thread::sleep_for(std::chrono::seconds(10));
 		std::unique_lock<mutex> lock(queueMutex);
 
 		std::cout << "We are going to add to the tasks queue. Ending all worker threads!" << endl;
