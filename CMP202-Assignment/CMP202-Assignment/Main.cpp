@@ -27,18 +27,22 @@ QueueFillerTask* queueFillerTask;
 //Create global variables
 bool finish = false;
 mutex queueMutex;
+mutex workerThreadMutex;
+bool noMoreTasks = false;
 condition_variable queueCV;
+condition_variable workerCV;
 bool addToQueue = false;
 bool killSwitch = false;
 bool changeFinish();
+int workerThreadsToMake = 4;
 
 void workerThreadFunction()
 {
 	cout << "Started a worker thread!" << endl;
 	Task* currentTask = NULL;
-	bool noMoreTasks = false;
 	while (finish == false)
 	{
+		unique_lock<mutex> workerLock(workerThreadMutex);
 		//Get a task if we don't have one
 		while (currentTask == NULL && noMoreTasks == false)
 		{
@@ -47,48 +51,43 @@ void workerThreadFunction()
 			{
 				currentTask = tasksQueue.front();
 				tasksQueue.pop();
+				queueMutex.unlock();
 			}
 			else
 			{
-				noMoreTasks = true;
+				queueMutex.unlock();
+				workerCV.wait(workerLock, []() { return noMoreTasks; });
+				break;
 			}
-			queueMutex.unlock();
 		}
 
 		if (noMoreTasks == true)
 		{
-			cout << "worker ran out of tasks. Finishing" << endl;
+			cout << "Worker was told to stop." << endl;
 			break;
 		}
 
-		//Get the type of truck
-		if (currentTask->getType() == truckType::inbound)
-		{
-			cout << "We are dealing with a inbound truck!" << endl;
-			//while (currentTask->getCount() > 0)
-			//{
-			//	currentTask->run();
-			//	std::this_thread::sleep_for(std::chrono::seconds(1));
-			//}
-			parallel_for(0, 50, [&](int value)
-			{
-				currentTask->run();
-			});
-		}
-		else
-		{
-			cout << "We are dealing with a outbound truck!" << endl;
-			//while (currentTask->getCount() < 50)
-			//{
-			//	currentTask->run();
-			//	std::this_thread::sleep_for(std::chrono::seconds(1));
-			//}
-			parallel_for(0, 50, [&](int value)
-			{
-				currentTask->run();
-			});
+		cout << "Running task.\n";
 
+		the_clock::time_point start = the_clock::now();
+
+	/*	parallel_for(0, 50, [&](int value)
+		{
+			currentTask->run();
+		});*/
+
+		for (int i = 0; i < 50; i++)
+		{
+			currentTask->run();
 		}
+
+		//Timing code.
+		the_clock::time_point end = the_clock::now();
+
+		auto time_taken = duration_cast<microseconds>(end - start).count();
+
+		std::cout << "Time taken was " << time_taken << std::endl;
+
 		cout << "Finished task!" << endl;
 		currentTask = NULL;
 	}
@@ -110,7 +109,7 @@ void QueueFillerThreadFunction()
 
 		std::cout << "Added to queue successfully. Restarting all worker threads..." << endl;
 		//Restart all 4 worker threads
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < workerThreadsToMake; i++)
 		{
 			workerThreads.push_back(new thread(workerThreadFunction));
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -128,17 +127,21 @@ void threadManager()
 		//Don't do anything for the first 20 seconds.
 		std::this_thread::sleep_for(std::chrono::seconds(10));
 		std::unique_lock<mutex> lock(queueMutex);
+		std::unique_lock<mutex> workerLock(workerThreadMutex);
 
 		std::cout << "We are going to add to the tasks queue. Ending all worker threads!" << endl;
 
-		//Find out if the program is trying to close.
+		//Try to change finish to true to stop the worker threads.
 		if (changeFinish() == true)
 		{
 			finish = true;
 		}
 
 		cout << "There are " << workerThreads.size() << " worker threads." << endl;
-		for (int i = 0; i < workerThreads.size(); i++)
+		workerLock.unlock();
+		noMoreTasks = true;
+		workerCV.notify_all();
+		for (unsigned int i = 0; i < workerThreads.size(); i++)
 		{
 			//Stop all the worker threads so we can add more to the queue using a conditonal variable
 			cout << "Stopping worker thread " << i << endl;
@@ -149,7 +152,7 @@ void threadManager()
 		//We clear the vector in case any threads remain in it.
 		workerThreads.clear();
 
-		//Find out if the program is trying to close.
+		//Try to change finish back to false to restart the worker threads.
 		if (changeFinish() == true)
 		{
 			finish = false;
@@ -162,6 +165,7 @@ void threadManager()
 		//We use notify one because only one thread should be waiting.
 		cout << "We are notifying all waiting threads." << endl;
 		lock.unlock();
+		noMoreTasks = false;
 		queueCV.notify_one();
 	}
 }
@@ -184,15 +188,15 @@ bool changeFinish()
 int main()
 {
 	std::string value = "";
-	//Fill our tasks queue with truck tasks (this could be done parallel)
+	//Fill our tasks queue with truck tasks (8)
 	for (int i = 0; i < 4; i++)
 	{
 		tasksQueue.push(new TruckTask(true));
 		tasksQueue.push(new TruckTask(false));
 	}
 
-	//Start all our worker threads (this could be done parallel)
-	for (int i = 0; i < 4; i++)
+	//Start all our worker threads
+	for (int i = 0; i < workerThreadsToMake; i++)
 	{
 		workerThreads.push_back(new thread(workerThreadFunction));
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -231,7 +235,7 @@ int main()
 	QueueFillerThread.join();
 	threadManagerThread.join();
 
-	for (int i = 0; i < workerThreads.size(); i++)
+	for (unsigned int i = 0; i < workerThreads.size(); i++)
 	{
 		workerThreads[i]->join();
 	}
