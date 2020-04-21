@@ -25,25 +25,39 @@ std::queue<Task*> tasksQueue;
 QueueFillerTask* queueFillerTask;
 
 //Create global variables
-bool finish = false;
-mutex queueMutex;
-mutex workerThreadMutex;
-bool noMoreTasks = false;
-condition_variable queueCV;
-condition_variable workerCV;
-bool addToQueue = false;
-bool killSwitch = false;
-bool changeFinish();
-int workerThreadsToMake = 4;
 
+//If true program will begin to shutdown
+bool finish = false;
+//Mutex to protect the queue of tasks
+mutex queueMutex;
+//Mutex to protect our worker threads vector
+mutex workerThreadMutex;
+//Bool to put worker threads to sleep
+bool noMoreTasks = false;
+//Condition variable to add new tasks to the queue
+condition_variable queueCV;
+//Condition variable to add or remove worker threads
+condition_variable workerCV;
+//Bool to find out if we can add tasks to the queue
+bool addToQueue = false;
+//Used to make sure that the program closes correctly we asked to do so
+bool killSwitch = false;
+//Function to see if we can change the status of finish
+bool changeFinish();
+//How many worker threads to make. Used in main
+int workerThreadsToMake = 16;
+
+//Function that handles working on tasks. Used by worker threads
 void workerThreadFunction()
 {
 	cout << "Started a worker thread!" << endl;
 	Task* currentTask = NULL;
+	//Begin working
 	while (finish == false)
 	{
 		unique_lock<mutex> workerLock(workerThreadMutex);
 		//Get a task if we don't have one
+		//If there are no tasks, put the thread to sleep
 		while (currentTask == NULL && noMoreTasks == false)
 		{
 			queueMutex.lock();
@@ -61,6 +75,7 @@ void workerThreadFunction()
 			}
 		}
 
+		//If no more tasks is true then we stop the thread.
 		if (noMoreTasks == true)
 		{
 			cout << "Worker was told to stop." << endl;
@@ -71,15 +86,15 @@ void workerThreadFunction()
 
 		the_clock::time_point start = the_clock::now();
 
-	/*	parallel_for(0, 50, [&](int value)
+		parallel_for(0, 50, [&](int value)
 		{
 			currentTask->run();
-		});*/
+		});
 
-		for (int i = 0; i < 50; i++)
-		{
-			currentTask->run();
-		}
+		//for (int i = 0; i < 50; i++)
+		//{
+		//	currentTask->run();
+		//}
 
 		//Timing code.
 		the_clock::time_point end = the_clock::now();
@@ -93,14 +108,16 @@ void workerThreadFunction()
 	}
 }
 
+//Function that handles adding tasks to our queue. Used by the queue filler thread.
 void QueueFillerThreadFunction()
 {
 	while (finish != true)
 	{
+		//Lock the queueMutex as we need to add to it.
 		unique_lock<mutex> lock(queueMutex);
+		//The thread should wait until the manager thread tells it to start
 		queueCV.wait(lock, []() { return addToQueue; });
 		cout << "Before running task, queue was size: " << tasksQueue.size() << endl;
-		//Lock as we need to add to the queue.
 		tasksQueue = queueFillerTask->run(tasksQueue);
 		cout << "After running Queue filler, queue size is: " << tasksQueue.size() << endl;
 		cout << "Worker threads left = " << workerThreads.size() << endl;
@@ -120,12 +137,14 @@ void QueueFillerThreadFunction()
 	}
 }
 
+//Function for stopping worker threads and starting the queue filler thread
 void threadManager()
 {
 	while (finish != true)
 	{
 		//Don't do anything for the first 20 seconds.
 		std::this_thread::sleep_for(std::chrono::seconds(10));
+		//Lock both mutexes as we will be using them
 		std::unique_lock<mutex> lock(queueMutex);
 		std::unique_lock<mutex> workerLock(workerThreadMutex);
 
@@ -188,7 +207,7 @@ bool changeFinish()
 int main()
 {
 	std::string value = "";
-	//Fill our tasks queue with truck tasks (8)
+	//Fill our tasks queue with truck tasks (8, 4 of each type)
 	for (int i = 0; i < 4; i++)
 	{
 		tasksQueue.push(new TruckTask(true));
@@ -232,6 +251,7 @@ int main()
 		}
 	}
 
+	//Start to join all threads and close
 	QueueFillerThread.join();
 	threadManagerThread.join();
 
