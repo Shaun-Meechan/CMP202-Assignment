@@ -17,14 +17,22 @@ TruckTask::TruckTask(bool delivery)
 
 void TruckTask::run()
 {
-	//We are running this function in a loop so we can just do it this way (maybe use atomic?)
+	//We are running this function in a loop so we can just do it this way
 	if (type == truckType::inbound)
 	{
 		count--;
+		if (count <= 0)
+		{
+			finished = true;
+		}
 	}
 	else
 	{
 		count++;
+		if (count >= 50)
+		{
+			finished = true;
+		}
 	}
 }
 

@@ -8,7 +8,9 @@ public:
     void run();
     int getCount();
     truckType getType();
+    bool getFinished();
 private:
     int count;
     truckType type;
+    bool finished = false;
 };
