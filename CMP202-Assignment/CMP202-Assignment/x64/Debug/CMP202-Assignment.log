@@ -1,2 +1,12 @@
 ﻿  Main.cpp
+C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\Main.cpp(115,19): warning C4244: 'argument': conversion from '_Rep' to 'const _Ty', possible loss of data
+          with
+          [
+              _Rep=__int64
+          ]
+          and
+          [
+              _Ty=long
+          ]
+C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\Main.cpp(207,28): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
   CMP202-Assignment.vcxproj -> C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\x64\Debug\CMP202-Assignment.exe

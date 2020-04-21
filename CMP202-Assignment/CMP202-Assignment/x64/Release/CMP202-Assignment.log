@@ -1,7 +1,18 @@
 ﻿  Main.cpp
+C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\Main.cpp(112,19): warning C4244: 'argument': conversion from '_Rep' to 'const _Ty', possible loss of data
+          with
+          [
+              _Rep=__int64
+          ]
+          and
+          [
+              _Ty=long
+          ]
+C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\Main.cpp(204,28): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\Main.cpp(228,6): warning C4101: 'i': unreferenced local variable
   Generating code
-  102 of 552 functions (18.5%) were compiled, the rest were copied from previous compilation.
-    96 functions were new in current compilation
-    20 functions had inline decision re-evaluated but remain unchanged
+  2 of 603 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   CMP202-Assignment.vcxproj -> C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\x64\Release\CMP202-Assignment.exe

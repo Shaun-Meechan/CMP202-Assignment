@@ -3,6 +3,7 @@
 #include "Task.h"
 #include "TruckTask.h"
 #include "QueueFillerTask.h"
+#include <list>
 
 //Import what we need from the standard library
 using std::chrono::duration_cast;
@@ -14,6 +15,7 @@ using std::vector;
 using std::thread;
 using std::condition_variable;
 using std::unique_lock;
+using std::list;
 using namespace concurrency;
 
 //Define the name "the_clock" for the clock we are using
@@ -22,6 +24,7 @@ typedef std::chrono::steady_clock the_clock;
 //Define the threads
 vector<thread*> workerThreads;
 std::queue<Task*> tasksQueue;
+//Define our queueFillerTask
 QueueFillerTask* queueFillerTask;
 
 //Create global variables
@@ -44,8 +47,16 @@ bool addToQueue = false;
 bool killSwitch = false;
 //Function to see if we can change the status of finish
 bool changeFinish();
+//Function to partition our times list
+int partition(int *a, int start, int end);
+//Function to perform our quicksort
+void quicksort(int *a, int start, int end);
 //How many worker threads to make. Used in main
-int workerThreadsToMake = 16;
+int workerThreadsToMake = 4;
+//List storing all finished tasks and the time they took
+vector<long> times;
+
+int arrayofTimes[100];
 
 //Function that handles working on tasks. Used by worker threads
 void workerThreadFunction()
@@ -100,6 +111,8 @@ void workerThreadFunction()
 		the_clock::time_point end = the_clock::now();
 
 		auto time_taken = duration_cast<microseconds>(end - start).count();
+
+		times.push_back(time_taken);
 
 		std::cout << "Time taken was " << time_taken << std::endl;
 
@@ -189,6 +202,12 @@ void threadManager()
 	}
 }
 
+void sortingThreadFunction()
+{
+	int end = times.size() - 1;
+	quicksort(arrayofTimes, 0, end);
+}
+
 //Check to see if we can change the status of finish based on killSwitch value
 //If kill switch equals true finish state cannot be changed and all threads must be stopped.
 //If kill switch equals false then the value of false can be changed.
@@ -201,6 +220,45 @@ bool changeFinish()
 	else
 	{
 		return true;
+	}
+}
+
+int partition(int *a, int start, int end)
+{
+	long pivot = a[end];
+
+	long PartionIndex = start;
+	long i, t;
+
+	//Check if the array value is less than the pivot.
+	//We then place is at the left side by swapping
+	for (i = start; i < end; i++)
+	{
+		if (a[i] <= pivot)
+		{
+			t = a[i];
+			a[i] = a[PartionIndex];
+			a[PartionIndex] = t;
+			PartionIndex++;
+		}
+	}
+
+	//Exchnage the value of pivot and the value at the index
+	t = a[end];
+	a[end] = a[PartionIndex];
+	a[PartionIndex] = t;
+
+	//Return the last pivot index
+	return PartionIndex;
+}
+
+void quicksort(int *a, int start, int end)
+{
+	if (start < end)
+	{
+		int PartitionIndex = partition(a, start, end);
+		quicksort(a, start, PartitionIndex - 1);
+		quicksort(a, PartitionIndex + 1, end);
 	}
 }
 
@@ -260,6 +318,19 @@ int main()
 		workerThreads[i]->join();
 	}
 	cout << "All worker threads stopped." << endl;
+
+	for (int i = 0; i < times.size(); i++)
+	{
+		arrayofTimes[i] = times[i];
+	}
+	thread sortingThread(sortingThreadFunction);
+	sortingThread.join();
+	cout << "After quick sort the array is:\n";
+
+	for (int i = 0; i < times.size(); i++ )
+	{
+		cout << arrayofTimes[i] << " ";
+	}
 
 	cout << "Program finished!";
 	return 0;
