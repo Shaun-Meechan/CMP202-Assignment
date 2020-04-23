@@ -1,2 +1,6 @@
 ﻿  Main.cpp
+  QueueFillerTask.cpp
+  TruckTask.cpp
+  Generating Code...
+  LINK : C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\x64\Debug\CMP202-Assignment.exe not found or not built by the last incremental link; performing full link
   CMP202-Assignment.vcxproj -> C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\x64\Debug\CMP202-Assignment.exe

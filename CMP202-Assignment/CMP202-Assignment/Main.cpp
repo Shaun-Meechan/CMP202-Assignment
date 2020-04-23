@@ -3,6 +3,7 @@
 #include "Task.h"
 #include "TruckTask.h"
 #include "QueueFillerTask.h"
+#include <list>
 
 //Import what we need from the standard library
 using std::chrono::duration_cast;
@@ -14,6 +15,7 @@ using std::vector;
 using std::thread;
 using std::condition_variable;
 using std::unique_lock;
+using std::list;
 using namespace concurrency;
 
 //Define the name "the_clock" for the clock we are using
@@ -22,8 +24,8 @@ typedef std::chrono::steady_clock the_clock;
 //Define the threads
 vector<thread*> workerThreads;
 std::queue<Task*> tasksQueue;
+//Define our queueFillerTask
 QueueFillerTask* queueFillerTask;
-
 //Create global variables
 
 //If true program will begin to shutdown
@@ -38,6 +40,8 @@ bool noMoreTasks = false;
 condition_variable queueCV;
 //Condition variable to add or remove worker threads
 condition_variable workerCV;
+//Condition variable to wake or sleep our queue watcher thread
+condition_variable queueWatcherCV;
 //Bool to find out if we can add tasks to the queue
 bool addToQueue = false;
 //Used to make sure that the program closes correctly we asked to do so
@@ -45,7 +49,7 @@ bool killSwitch = false;
 //Function to see if we can change the status of finish
 bool changeFinish();
 //How many worker threads to make. Used in main
-int workerThreadsToMake = 16;
+int workerThreadsToMake = 1;
 
 //Function that handles working on tasks. Used by worker threads
 void workerThreadFunction()
@@ -86,23 +90,13 @@ void workerThreadFunction()
 
 		the_clock::time_point start = the_clock::now();
 
-		parallel_for(0, 50, [&](int value)
-		{
-			currentTask->run();
-		});
-
-		//for (int i = 0; i < 50; i++)
-		//{
-		//	currentTask->run();
-		//}
+		currentTask->run();
 
 		//Timing code.
 		the_clock::time_point end = the_clock::now();
-
 		auto time_taken = duration_cast<microseconds>(end - start).count();
-
+		//timeTaken += time_taken;
 		std::cout << "Time taken was " << time_taken << std::endl;
-
 		cout << "Finished task!" << endl;
 		currentTask = NULL;
 	}
@@ -125,6 +119,12 @@ void QueueFillerThreadFunction()
 		lock.unlock();
 
 		std::cout << "Added to queue successfully. Restarting all worker threads..." << endl;
+
+		////Restart our queueWatcher Thread
+		std::unique_lock<mutex> queueWatcherLock(queueMutex);
+		queueWatcherLock.unlock();
+		queueWatcherCV.notify_one();
+
 		//Restart all 4 worker threads
 		for (int i = 0; i < workerThreadsToMake; i++)
 		{
@@ -142,7 +142,7 @@ void threadManager()
 {
 	while (finish != true)
 	{
-		//Don't do anything for the first 20 seconds.
+		//Don't do anything for the first 10 seconds.
 		std::this_thread::sleep_for(std::chrono::seconds(10));
 		//Lock both mutexes as we will be using them
 		std::unique_lock<mutex> lock(queueMutex);
@@ -207,8 +207,25 @@ bool changeFinish()
 int main()
 {
 	std::string value = "";
-	//Fill our tasks queue with truck tasks (8, 4 of each type)
-	for (int i = 0; i < 4; i++)
+	bool validData = false;
+
+	do
+	{
+		cout << "How many worker threads do you want?\n";
+		std::cin >> workerThreadsToMake;
+		if (std::cin.good())
+		{
+			validData = true;
+		}
+		else
+		{
+			std::cin.clear();
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			cout << "ERROR: Invalid input, please try again" << endl;
+		}
+	} while (validData == false);
+	//Fill our tasks queue with truck tasks (10, 5 of each type)
+	for (int i = 0; i < 5; i++)
 	{
 		tasksQueue.push(new TruckTask(true));
 		tasksQueue.push(new TruckTask(false));
@@ -218,12 +235,13 @@ int main()
 	for (int i = 0; i < workerThreadsToMake; i++)
 	{
 		workerThreads.push_back(new thread(workerThreadFunction));
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 
 	thread QueueFillerThread(QueueFillerThreadFunction);
 
 	thread threadManagerThread(threadManager);
+
 
 	cout << "Enter 's' at any time to end the program" << endl;
 	while (finish == false)
