@@ -26,7 +26,6 @@ vector<thread*> workerThreads;
 std::queue<Task*> tasksQueue;
 //Define our queueFillerTask
 QueueFillerTask* queueFillerTask;
-
 //Create global variables
 
 //If true program will begin to shutdown
@@ -41,22 +40,16 @@ bool noMoreTasks = false;
 condition_variable queueCV;
 //Condition variable to add or remove worker threads
 condition_variable workerCV;
+//Condition variable to wake or sleep our queue watcher thread
+condition_variable queueWatcherCV;
 //Bool to find out if we can add tasks to the queue
 bool addToQueue = false;
 //Used to make sure that the program closes correctly we asked to do so
 bool killSwitch = false;
 //Function to see if we can change the status of finish
 bool changeFinish();
-//Function to partition our times list
-int partition(int *a, int start, int end);
-//Function to perform our quicksort
-void quicksort(int *a, int start, int end);
 //How many worker threads to make. Used in main
-int workerThreadsToMake = 4;
-//List storing all finished tasks and the time they took
-vector<long> times;
-
-int arrayofTimes[100];
+int workerThreadsToMake = 1;
 
 //Function that handles working on tasks. Used by worker threads
 void workerThreadFunction()
@@ -97,25 +90,13 @@ void workerThreadFunction()
 
 		the_clock::time_point start = the_clock::now();
 
-		parallel_for(0, 50, [&](int value)
-		{
-			currentTask->run();
-		});
-
-		//for (int i = 0; i < 50; i++)
-		//{
-		//	currentTask->run();
-		//}
+		currentTask->run();
 
 		//Timing code.
 		the_clock::time_point end = the_clock::now();
-
 		auto time_taken = duration_cast<microseconds>(end - start).count();
-
-		times.push_back(time_taken);
-
+		//timeTaken += time_taken;
 		std::cout << "Time taken was " << time_taken << std::endl;
-
 		cout << "Finished task!" << endl;
 		currentTask = NULL;
 	}
@@ -138,6 +119,12 @@ void QueueFillerThreadFunction()
 		lock.unlock();
 
 		std::cout << "Added to queue successfully. Restarting all worker threads..." << endl;
+
+		////Restart our queueWatcher Thread
+		std::unique_lock<mutex> queueWatcherLock(queueMutex);
+		queueWatcherLock.unlock();
+		queueWatcherCV.notify_one();
+
 		//Restart all 4 worker threads
 		for (int i = 0; i < workerThreadsToMake; i++)
 		{
@@ -155,7 +142,7 @@ void threadManager()
 {
 	while (finish != true)
 	{
-		//Don't do anything for the first 20 seconds.
+		//Don't do anything for the first 10 seconds.
 		std::this_thread::sleep_for(std::chrono::seconds(10));
 		//Lock both mutexes as we will be using them
 		std::unique_lock<mutex> lock(queueMutex);
@@ -202,12 +189,6 @@ void threadManager()
 	}
 }
 
-void sortingThreadFunction()
-{
-	int end = times.size() - 1;
-	quicksort(arrayofTimes, 0, end);
-}
-
 //Check to see if we can change the status of finish based on killSwitch value
 //If kill switch equals true finish state cannot be changed and all threads must be stopped.
 //If kill switch equals false then the value of false can be changed.
@@ -223,50 +204,28 @@ bool changeFinish()
 	}
 }
 
-int partition(int *a, int start, int end)
-{
-	long pivot = a[end];
-
-	long PartionIndex = start;
-	long i, t;
-
-	//Check if the array value is less than the pivot.
-	//We then place is at the left side by swapping
-	for (i = start; i < end; i++)
-	{
-		if (a[i] <= pivot)
-		{
-			t = a[i];
-			a[i] = a[PartionIndex];
-			a[PartionIndex] = t;
-			PartionIndex++;
-		}
-	}
-
-	//Exchnage the value of pivot and the value at the index
-	t = a[end];
-	a[end] = a[PartionIndex];
-	a[PartionIndex] = t;
-
-	//Return the last pivot index
-	return PartionIndex;
-}
-
-void quicksort(int *a, int start, int end)
-{
-	if (start < end)
-	{
-		int PartitionIndex = partition(a, start, end);
-		quicksort(a, start, PartitionIndex - 1);
-		quicksort(a, PartitionIndex + 1, end);
-	}
-}
-
 int main()
 {
 	std::string value = "";
-	//Fill our tasks queue with truck tasks (8, 4 of each type)
-	for (int i = 0; i < 4; i++)
+	bool validData = false;
+
+	do
+	{
+		cout << "How many worker threads do you want?\n";
+		std::cin >> workerThreadsToMake;
+		if (std::cin.good())
+		{
+			validData = true;
+		}
+		else
+		{
+			std::cin.clear();
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			cout << "ERROR: Invalid input, please try again" << endl;
+		}
+	} while (validData == false);
+	//Fill our tasks queue with truck tasks (10, 5 of each type)
+	for (int i = 0; i < 5; i++)
 	{
 		tasksQueue.push(new TruckTask(true));
 		tasksQueue.push(new TruckTask(false));
@@ -276,12 +235,13 @@ int main()
 	for (int i = 0; i < workerThreadsToMake; i++)
 	{
 		workerThreads.push_back(new thread(workerThreadFunction));
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 
 	thread QueueFillerThread(QueueFillerThreadFunction);
 
 	thread threadManagerThread(threadManager);
+
 
 	cout << "Enter 's' at any time to end the program" << endl;
 	while (finish == false)
@@ -318,19 +278,6 @@ int main()
 		workerThreads[i]->join();
 	}
 	cout << "All worker threads stopped." << endl;
-
-	for (int i = 0; i < times.size(); i++)
-	{
-		arrayofTimes[i] = times[i];
-	}
-	thread sortingThread(sortingThreadFunction);
-	sortingThread.join();
-	cout << "After quick sort the array is:\n";
-
-	for (int i = 0; i < times.size(); i++ )
-	{
-		cout << arrayofTimes[i] << " ";
-	}
 
 	cout << "Program finished!";
 	return 0;

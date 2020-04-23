@@ -29,10 +29,10 @@
     <ClInclude Include="QueueFillerTask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Task.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="TruckTask.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Task.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
