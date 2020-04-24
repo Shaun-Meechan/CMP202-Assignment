@@ -1,16 +1,8 @@
 ﻿  Main.cpp
   QueueFillerTask.cpp
-  TruckTask.cpp
-C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\TruckTask.cpp(28,46): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\TruckTask.cpp(28,30): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\TruckTask.cpp(43,13): warning C4244: 'initializing': conversion from 'float' to 'long', possible loss of data
-C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\TruckTask.cpp(54,11): warning C4244: '=': conversion from 'float' to 'long', possible loss of data
-C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\TruckTask.cpp(56,22): warning C4244: '=': conversion from 'long' to 'float', possible loss of data
-C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\TruckTask.cpp(62,11): warning C4244: '=': conversion from 'float' to 'long', possible loss of data
-C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\CMP202-Assignment\TruckTask.cpp(64,20): warning C4244: '=': conversion from 'long' to 'float', possible loss of data
   Generating code
-  3 of 459 functions ( 0.7%) were compiled, the rest were copied from previous compilation.
-    2 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+  182 of 521 functions (34.9%) were compiled, the rest were copied from previous compilation.
+    6 functions were new in current compilation
+    36 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   CMP202-Assignment.vcxproj -> C:\Users\shaun\Documents\CMP202-AssignmentV2\CMP202-Assignment\x64\Release\CMP202-Assignment.exe
