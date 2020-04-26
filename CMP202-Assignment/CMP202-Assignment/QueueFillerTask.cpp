@@ -3,7 +3,7 @@
 std::queue<Task*> QueueFillerTask::run(std::queue<Task*> tasksQueue)
 {
 	//Int to determine how many trucks to add.
-	int randomNumber = rand() % 10;
+	int randomNumber = rand() % 11;
 	//Int to determine if the truck should be "inbound" or "outbound"
 	int r2 = rand() % 2;
 	//Make this parralel
