@@ -139,13 +139,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="QueueFillerTask.cpp" />
-    <ClCompile Include="TruckTask.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="QueueFillerTask.h" />
-    <ClInclude Include="Task.h" />
-    <ClInclude Include="TruckTask.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

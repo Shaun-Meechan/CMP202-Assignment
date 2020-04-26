@@ -1,13 +1,13 @@
-//We don't have lots of include as QueueFiller has most of these includes anyway, no need to include twice.
-
-#include "Task.h"
-#include "TruckTask.h"
-#include "QueueFillerTask.h"
 #include <list>
 #include <complex>
 #include <fstream>
 #include <cstdint>
 #include <cstdlib>
+#include <queue>
+#include <ppl.h>
+#include <chrono>
+#include <iostream>
+
 //Import what we need from the standard library
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
