@@ -222,7 +222,6 @@ void workerThreadFunction()
 		localThreadArgs.endY = (75 * localThreadArgs.loopCounter);
 		the_clock::time_point start = the_clock::now();
 
-		//currentTask->run();
 		compute_mandelbrot(localThreadArgs.left,localThreadArgs.right,localThreadArgs.top,localThreadArgs.bottom,localThreadArgs.startY,localThreadArgs.endY);
 		//Timing code.
 		the_clock::time_point end = the_clock::now();
