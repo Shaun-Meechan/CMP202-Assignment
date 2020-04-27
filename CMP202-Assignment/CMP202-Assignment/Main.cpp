@@ -30,7 +30,6 @@ typedef std::chrono::steady_clock the_clock;
 //Define the threads
 vector<thread*> workerThreads;
 //Create global variables
-
 //If true program will begin to shutdown
 bool finish = false;
 //Mutex for our worker threads
@@ -170,22 +169,22 @@ void compute_mandelbrot(double left, double right, double top, double bottom, in
 			}
 		}
 	}
-
 }
 
+//Create a structure that contains all the data we need for our compute mandlebrot thread.
 struct threadArgs
 {
 	double left = -2.0;
 	double right = 1.0;
 	double top = 1.125;
 	double bottom = -1.125;
-	int startY = 0;
-	int endY = 0;
-	int loopCounter = 1;
+	short unsigned int startY = 0;
+	short unsigned int endY = 0;
+	short unsigned int loopCounter = 1;
 };
 
+//Create a variable to use the structure
 threadArgs globalThreadArgs;
-
 
 //Function that handles working on tasks. Used by worker threads
 void workerThreadFunction()
@@ -213,7 +212,8 @@ void workerThreadFunction()
 		}
 
 		cout << "Worker thread starting work.\n";
-
+		
+		//Lock the gloabal structure, increment the global counter then unlock.
 		threadArgsMutex.lock();
 		threadArgs localThreadArgs = globalThreadArgs;
 		globalThreadArgs.loopCounter += 1;
@@ -242,11 +242,13 @@ void threadManager()
 		//Lock both mutexes as we will be using them
 		std::unique_lock<mutex> TGALock(imageWriterMutex);
 
+		//If the worker thhreads are still working, sleep.
 		while (noMoreTasks == false)
 		{
 			std::this_thread::sleep_for(std::chrono::seconds(15));
 		}
 
+		//If the worker threads are finished write the image and ask the user to end the program
 		if (globalThreadArgs.loopCounter >= 17 || globalThreadArgs.loopCounter >= sectionsToMake)
 		{
 			wakeWorker = true;
@@ -279,6 +281,7 @@ int main()
 	std::string value = "";
 	bool validData = false;
 
+	//Make sure the user enters a valid number of therads.
 	do
 	{
 		cout << "How many worker threads do you want?\n";
@@ -295,6 +298,7 @@ int main()
 		}
 	} while (validData == false);
 
+	//Make sure the user enters a valid number of sections.
 	do
 	{
 		cout << "How many sections do you want?\n";
@@ -314,14 +318,15 @@ int main()
 	for (int i = 0; i < workerThreadsToMake; i++)
 	{
 		workerThreads.push_back(new thread(workerThreadFunction));
-		//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
-
-
+	
+	//Create our image writer and thread manager threads.
 	thread threadManagerThread(threadManager);
 	thread imageWriterThread(write_tga,"output.tga");
 
 	cout << "Enter 's' at any time to end the program" << endl;
+	
+	//Let the user enters commands
 	while (finish == false)
 	{
 		std::cin >> value;
@@ -339,7 +344,7 @@ int main()
 		}
 	}
 
-	//Start to join all threads and close
+	//Start to join all threads and close the program
 	threadManagerThread.join();
 	cout << "Thread manager stopped.\n";
 
